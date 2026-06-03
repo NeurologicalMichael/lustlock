@@ -59,7 +59,7 @@ export default function ProfileScreen() {
     globalStreakDays, longestGlobalStreak, emergencyCount,
     isPro, activeShields,
     notifDaily, accountabilityPartners,
-    setUserProfile, setNotifPref, setIsPro, setOnboardingData, resetLocalAccount,
+    setUserProfile, setNotifPref, setIsPro, resetLocalAccount,
     addAccountabilityPartner, removeAccountabilityPartner,
   } = useAppStore();
 
@@ -155,23 +155,6 @@ export default function ProfileScreen() {
           onPress: () => {
             removeAccountabilityPartner(accountabilityPartner.partnerUserId);
             setPartnerModal(false);
-          },
-        },
-      ]
-    );
-  }
-
-  function replayOnboarding() {
-    Alert.alert(
-      'Replay onboarding?',
-      'This lets you review the onboarding flow again without deleting your account or progress.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Replay',
-          onPress: () => {
-            setOnboardingData({ onboardingComplete: false });
-            router.replace('/onboarding');
           },
         },
       ]
@@ -391,7 +374,6 @@ export default function ProfileScreen() {
         <View style={s.px}>
           <SectionLabel>App</SectionLabel>
           <Row label="Version" value="1.0.0" first />
-          <Row label="Replay Onboarding" onPress={replayOnboarding} />
           <Row label="Privacy Policy" onPress={() => openUrl(PRIVACY_POLICY_URL)} />
           <Row label="Terms of Use" onPress={() => openUrl(TERMS_OF_USE_URL)} last />
         </View>

@@ -8,6 +8,8 @@ Faith-based accountability, blocker tools, prayer support, and daily discipline 
 ### Description
 LustLock is a faith-based recovery and accountability app built to help Christian men fight lust, quit porn, and pursue lasting freedom with structure, privacy, and daily support.
 
+An auto-renewable subscription purchase is required to access LustLock features after onboarding. Available subscription plans and prices are shown in the app before purchase.
+
 The app combines a focused recovery plan, private progress tracking, emergency support tools, scripture-based encouragement, journaling, and optional device-level shielding features. LustLock is designed for men who are serious about breaking porn habits, resisting temptation, and rebuilding discipline through faith.
 
 Key features include:
@@ -38,8 +40,10 @@ https://github.com/NeurologicalMichael/lustlock/blob/main/SUPPORT.md
 If App Store Connect rejects the GitHub URL, create a free public Google Doc or Notion page with the same support text and use that public link.
 
 ### Privacy Policy URL
-Use this GitHub privacy policy page once the file is pushed:
-https://github.com/NeurologicalMichael/lustlock/blob/main/PRIVACY_POLICY.md
+https://lustlockprivacy-site.netlify.app
+
+### Terms of Use URL
+https://lustlock-terms-of-use.netlify.app
 
 ### Marketing URL
 Optional. Leave blank unless you have a real landing page.
@@ -57,7 +61,7 @@ Recommended setting:
 Check "Sign-in required" and use the reviewer credentials below.
 
 Username:
-reviewer@lustlock.app
+michaelbreibart+lustlockreview@gmail.com
 
 Password:
 LustLockReview2026!
@@ -87,7 +91,7 @@ The app uses an auto-renewable subscription for full access. Reviewers can test 
 
 For review access, please choose "I Already Have an Account" on the first screen and use:
 
-Username: reviewer@lustlock.app
+Username: michaelbreibart+lustlockreview@gmail.com
 Password: LustLockReview2026!
 
 This reviewer login automatically grants Pro access so the full app can be reviewed without requiring a live production purchase. New users can also choose "I'm New Here" to review the full onboarding assessment flow.

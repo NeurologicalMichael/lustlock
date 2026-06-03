@@ -8,9 +8,12 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+build/
+privacy-site.zip
 
 # Native
 .kotlin/
+*.xcarchive
 *.orig.*
 *.jks
 *.p8
@@ -38,5 +41,4 @@ yarn-error.*
 *.tsbuildinfo
 
 # generated native folders
-/ios
 /android

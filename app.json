@@ -7,11 +7,10 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "cover",
-      "backgroundColor": "#FF6600"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": false,
@@ -20,9 +19,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F07020"
+        "backgroundColor": "#E8762C"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.lustlock.app"
     },
     "plugins": [
@@ -32,7 +30,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#F07020"
+          "color": "#E8762C"
         }
       ],
       "expo-sharing"

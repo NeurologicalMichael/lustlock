@@ -1,184 +1,91 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert,
+  ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
-import { Colors } from '../../constants/colors';
+import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 import { Toggle } from '../../components/UI';
-import { ScreenTime, type ScreenTimeState } from '../../modules/ScreenTime';
+import { Colors } from '../../constants/colors';
+import { ScreenTime } from '../../modules/ScreenTime';
+import { syncDailyReminder } from '../../lib/notifications';
 import { useAppStore } from '../../store/useAppStore';
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
-
-function ShieldIcon({ size = 22, color = Colors.gold }: { size?: number; color?: string }) {
+function ShieldIcon({ size = 22 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M12 2L4 5v6c0 5.5 3.75 10.15 8 11.4C16.25 21.15 20 16.5 20 11V5L12 2z"
-        stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>
+        stroke={Colors.gold} strokeWidth="1.8" strokeLinejoin="round"/>
+      <Path d="M9 12l2 2 4-4" stroke={Colors.gold} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
     </Svg>
   );
 }
-function LockIcon({ color = Colors.white3 }: { color?: string }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-      <Rect x="5" y="11" width="14" height="10" rx="2" stroke={color} strokeWidth="1.5"/>
-      <Path d="M8 11V7a4 4 0 018 0v4" stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
-    </Svg>
-  );
-}
-function GlobeIcon({ color = Colors.white3 }: { color?: string }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5"/>
-      <Path d="M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9M3 12h18"
-        stroke={color} strokeWidth="1.5" strokeLinecap="round"/>
-    </Svg>
-  );
-}
-function PhoneIcon({ color = Colors.white3 }: { color?: string }) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-      <Rect x="5" y="2" width="14" height="20" rx="3" stroke={color} strokeWidth="1.5"/>
-      <Line x1="12" y1="18" x2="12.01" y2="18" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-    </Svg>
-  );
-}
-function CheckCircle({ color = Colors.success }: { color?: string }) {
+
+function GlobeIcon() {
   return (
     <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="1.5"/>
-      <Path d="M8 12l3 3 5-5" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <Circle cx="12" cy="12" r="9" stroke={Colors.black} strokeWidth="1.5"/>
+      <Path d="M12 3c-2.5 3-4 5.5-4 9s1.5 6 4 9M12 3c2.5 3 4 5.5 4 9s-1.5 6-4 9M3 12h18"
+        stroke={Colors.black} strokeWidth="1.5" strokeLinecap="round"/>
     </Svg>
   );
 }
 
-// ── Permission gate ───────────────────────────────────────────────────────────
-
-function PermissionGate({ onGranted }: { onGranted: () => void }) {
-  const insets = useSafeAreaInsets();
-  const [requesting, setRequesting] = useState(false);
-
-  const request = async () => {
-    setRequesting(true);
-    try {
-      const status = await ScreenTime.requestAuthorization();
-      if (status === 'approved') {
-        onGranted();
-      } else {
-        Alert.alert(
-          'Permission Required',
-          'LustLock needs Screen Time access to shield apps and block adult web content. You can enable this in Settings → Screen Time.',
-          [{ text: 'OK' }]
-        );
-      }
-    } finally {
-      setRequesting(false);
-    }
-  };
-
+function PhoneIcon() {
   return (
-    <View style={[pg.root, { paddingTop: insets.top + 14, paddingBottom: insets.bottom + 40 }]}>
-      {/* Glow ring */}
-      <View style={pg.glowWrap}>
-        <LinearGradient
-          colors={['rgba(255,215,0,0.18)', 'rgba(255,215,0,0.04)']}
-          style={pg.glowRing}
-        />
-        <ShieldIcon size={52} color={Colors.gold}/>
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+      <Rect x="5" y="2" width="14" height="20" rx="3" stroke={Colors.black} strokeWidth="1.5"/>
+      <Line x1="12" y1="18" x2="12.01" y2="18" stroke={Colors.black} strokeWidth="2" strokeLinecap="round"/>
+    </Svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+      <Path d="M18 8a6 6 0 00-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M14 21h-4"
+        stroke={Colors.black} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </Svg>
+  );
+}
+
+function ControlCard({
+  icon, title, body, action, actionLabel, toggle, onToggle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  action?: () => void;
+  actionLabel?: string;
+  toggle?: boolean;
+  onToggle?: () => void;
+}) {
+  return (
+    <View style={s.card}>
+      <View style={s.cardTop}>
+        <View style={s.iconWrap}>{icon}</View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.cardTitle}>{title}</Text>
+          <Text style={s.cardBody}>{body}</Text>
+        </View>
+        {typeof toggle === 'boolean' && onToggle ? <Toggle on={toggle} onToggle={onToggle}/> : null}
       </View>
-
-      <Text style={pg.eyebrow}>SCREEN TIME BLOCKER</Text>
-      <Text style={pg.title}>Covenant{'\n'}Shield</Text>
-      <Text style={pg.body}>
-        LustLock uses Apple's Screen Time API to block adult web content and shield distraction apps — enforced at the OS level, active even when the app is closed.
-      </Text>
-
-      <View style={pg.bullets}>
-        {[
-          [GlobeIcon,  'Blocks adult web content in Safari'],
-          [PhoneIcon,  'Shields apps you choose (Instagram, TikTok, etc.)'],
-          [LockIcon,   'Restrictions persist in the background'],
-        ].map(([Icon, label], i) => (
-          <View key={i} style={pg.bullet}>
-            {/* @ts-ignore */}
-            <Icon color={Colors.gold}/>
-            <Text style={pg.bulletText}>{label as string}</Text>
-          </View>
-        ))}
-      </View>
-
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={request}
-        disabled={requesting}
-        style={[pg.btn, requesting && { opacity: 0.6 }]}
-      >
-        <LinearGradient
-          colors={['#FFD700', '#FFA500', '#FF8C00']}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-          style={pg.btnGrad}
-        >
-          {requesting
-            ? <ActivityIndicator color="#0A0520" size="small"/>
-            : <Text style={pg.btnText}>ALLOW SCREEN TIME ACCESS</Text>
-          }
-        </LinearGradient>
-      </TouchableOpacity>
-
-      <Text style={pg.note}>
-        iOS will show a system dialog. Your data never leaves your device.
-      </Text>
+      {action && actionLabel ? (
+        <TouchableOpacity activeOpacity={0.75} onPress={action} style={s.action}>
+          <Text style={s.actionText}>{actionLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
 
-const pg = StyleSheet.create({
-  root: {
-    flex: 1, backgroundColor: Colors.bg,
-    alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 28,
-  },
-  glowWrap: {
-    width: 100, height: 100, borderRadius: 50,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 28,
-  },
-  glowRing: {
-    ...StyleSheet.absoluteFillObject, borderRadius: 50,
-    borderWidth: 1.5, borderColor: Colors.goldBorder,
-  },
-  eyebrow: {
-    fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 3,
-    color: Colors.gold, marginBottom: 8,
-  },
-  title: {
-    fontFamily: 'Cinzel_700Bold', fontSize: 30, letterSpacing: 1,
-    color: Colors.white, textAlign: 'center', lineHeight: 40, marginBottom: 16,
-  },
-  body: {
-    fontFamily: 'CrimsonPro_400Regular', fontSize: 14,
-    color: Colors.white2, textAlign: 'center', lineHeight: 22, marginBottom: 28,
-  },
-  bullets: { width: '100%', gap: 14, marginBottom: 32 },
-  bullet: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  bulletText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 14, color: Colors.white2, flex: 1 },
-  btn: { width: '100%', borderRadius: 999, overflow: 'hidden' },
-  btnGrad: { height: 54, alignItems: 'center', justifyContent: 'center' },
-  btnText: { fontFamily: 'Cinzel_700Bold', fontSize: 12, letterSpacing: 2, color: '#0A0520' },
-  note: {
-    fontFamily: 'CrimsonPro_400Regular', fontSize: 11,
-    color: Colors.white3, textAlign: 'center', marginTop: 14, lineHeight: 17,
-  },
-});
-
-// ── Main blocker screen ───────────────────────────────────────────────────────
-
 export default function BlockerScreen() {
   const insets = useSafeAreaInsets();
-  const { syncScreenTimeState, screenTimeAuthStatus, adultContentBlocked, appShieldEnabled, shieldedAppCount } = useAppStore();
-  const [loading, setLoading] = useState(false);
+  const {
+    activeShields, screenTimeAuthStatus, appShieldEnabled, shieldedAppCount,
+    notifDaily, syncScreenTimeState, setNotifPref,
+  } = useAppStore();
+  const [busy, setBusy] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const state = await ScreenTime.getState();
@@ -189,257 +96,175 @@ export default function BlockerScreen() {
       shieldedAppCount: state.shieldedAppCount,
       shieldedCategoryCount: state.shieldedCategoryCount,
     });
-  }, []);
+  }, [syncScreenTimeState]);
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const handleGranted = useCallback(async () => {
-    await refresh();
-    // Auto-enable adult content blocking right after authorization
-    await ScreenTime.setAdultContentBlocked(true);
-    await refresh();
-  }, [refresh]);
-
-  const toggleAdultBlock = useCallback(async (on: boolean) => {
-    setLoading(true);
+  const ensureAccess = useCallback(async () => {
+    if (screenTimeAuthStatus === 'approved') return true;
+    setBusy('access');
     try {
-      await ScreenTime.setAdultContentBlocked(on);
+      const status = await ScreenTime.requestAuthorization();
       await refresh();
+      if (status === 'approved') return true;
+      Alert.alert('Screen Time Access Needed', 'Allow Screen Time access to choose apps for blocking.');
+      return false;
     } finally {
-      setLoading(false);
+      setBusy(null);
     }
-  }, [refresh]);
+  }, [refresh, screenTimeAuthStatus]);
 
-  const openAppPicker = useCallback(async () => {
-    const result = await ScreenTime.presentAppPicker();
-    if (result.success) await refresh();
-  }, [refresh]);
+  const editApps = useCallback(async () => {
+    if (!await ensureAccess()) return;
+    setBusy('apps');
+    try {
+      const result = await ScreenTime.presentAppPicker();
+      if (result.success) await refresh();
+    } finally {
+      setBusy(null);
+    }
+  }, [ensureAccess, refresh]);
 
-  const clearShield = useCallback(async () => {
-    Alert.alert(
-      'Remove App Shield?',
-      'All shielded app restrictions will be lifted immediately.',
-      [
-        { text: 'Remove', style: 'destructive', onPress: async () => {
-          await ScreenTime.clearAppShield();
-          await refresh();
-        }},
-        { text: 'Keep', style: 'cancel' },
-      ]
-    );
-  }, [refresh]);
+  const toggleApps = useCallback(async () => {
+    if (!appShieldEnabled) {
+      await editApps();
+      return;
+    }
+    Alert.alert('Disable app blocking?', 'Your selected apps will become available immediately.', [
+      { text: 'Keep Enabled', style: 'cancel' },
+      {
+        text: 'Disable',
+        style: 'destructive',
+        onPress: async () => {
+          setBusy('apps');
+          try {
+            await ScreenTime.clearAppShield();
+            await refresh();
+          } finally {
+            setBusy(null);
+          }
+        },
+      },
+    ]);
+  }, [appShieldEnabled, editApps, refresh]);
 
-  // Show permission gate until authorized
-  if (screenTimeAuthStatus === 'notDetermined' || screenTimeAuthStatus === 'unknown') {
-    return <PermissionGate onGranted={handleGranted}/>;
-  }
+  const toggleReminder = useCallback(async () => {
+    const next = !notifDaily;
+    setBusy('notifications');
+    try {
+      const scheduled = await syncDailyReminder(next, true);
+      setNotifPref('notifDaily', next && scheduled);
+      if (next && !scheduled) {
+        Alert.alert('Notifications Disabled', 'Enable notifications in iOS Settings to receive your daily reminder.');
+      }
+    } finally {
+      setBusy(null);
+    }
+  }, [notifDaily, setNotifPref]);
 
-  const authorized = screenTimeAuthStatus === 'approved';
-  const denied     = screenTimeAuthStatus === 'denied';
+  const dnsEnabled = activeShields.length > 0;
+  const screenTimeEnabled = appShieldEnabled && screenTimeAuthStatus === 'approved';
+  const anyEnabled = dnsEnabled || screenTimeEnabled || notifDaily;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.bg }}>
-      {/* Header */}
-      <LinearGradient
-        colors={['#1A0B2E', '#200D38']}
-        style={[s.header, { paddingTop: insets.top + 14 }]}
-      >
+    <View style={s.root}>
+      <View style={[s.header, { paddingTop: insets.top + 14 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={s.eyebrow}>COVENANT SHIELD</Text>
-          <Text style={s.title}>Blocker</Text>
+          <Text style={s.eyebrow}>PROTECTION CENTER</Text>
+          <Text style={s.title}>Shield</Text>
         </View>
-        <View style={[s.statusBadge, { borderColor: authorized ? Colors.goldBorder : Colors.border }]}>
-          <View style={[s.statusDot, { backgroundColor: authorized ? Colors.success : Colors.crimson }]}/>
-          <Text style={[s.statusText, { color: authorized ? Colors.success : Colors.white3 }]}>
-            {authorized ? 'Active' : denied ? 'Denied' : 'Inactive'}
-          </Text>
+        <View style={s.badge}>
+          <View style={[s.badgeDot, { backgroundColor: anyEnabled ? Colors.success : Colors.border }]}/>
+          <Text style={s.badgeText}>{anyEnabled ? 'Enabled' : 'Off'}</Text>
         </View>
-      </LinearGradient>
+      </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: insets.bottom + 110 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 100, gap: 12 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Denied state */}
-        {denied && (
-          <View style={s.deniedCard}>
-            <Text style={s.deniedTitle}>Screen Time Access Denied</Text>
-            <Text style={s.deniedBody}>
-              Go to Settings → Screen Time → enable Screen Time, then allow LustLock under "Always Allowed" or re-run setup.
-            </Text>
+        <View style={s.summary}>
+          <ShieldIcon size={26}/>
+          <Text style={s.summaryText}>Choose the protection that fits your day. Each control can be adjusted independently.</Text>
+        </View>
+
+        <ControlCard
+          icon={<GlobeIcon/>}
+          title="DNS Web Filter"
+          body={dnsEnabled ? 'A DNS profile is marked active on this device.' : 'Set up a device-wide web filter profile.'}
+          action={() => router.push('/shield')}
+          actionLabel={dnsEnabled ? 'MANAGE DNS FILTER' : 'SET UP DNS FILTER'}
+        />
+
+        <ControlCard
+          icon={<PhoneIcon/>}
+          title="Screen Time App Blocking"
+          body={screenTimeEnabled ? `${shieldedAppCount} app${shieldedAppCount === 1 ? '' : 's'} selected.` : 'Choose the apps that should show an intervention screen.'}
+          toggle={screenTimeEnabled}
+          onToggle={toggleApps}
+          action={editApps}
+          actionLabel={screenTimeEnabled ? 'EDIT BLOCKED APPS' : 'CHOOSE APPS'}
+        />
+
+        <ControlCard
+          icon={<BellIcon/>}
+          title="Daily Reminder"
+          body="One private check-in reminder each evening at 8:00 PM."
+          toggle={notifDaily}
+          onToggle={toggleReminder}
+        />
+
+        {busy ? (
+          <View style={s.loadingRow}>
+            <ActivityIndicator size="small" color={Colors.gold}/>
+            <Text style={s.loadingText}>Updating protection...</Text>
           </View>
-        )}
-
-        {/* Adult content block row */}
-        <View style={s.sectionLabel}>
-          <GlobeIcon color={Colors.white3}/>
-          <Text style={s.sectionLabelText}>WEB CONTENT</Text>
-        </View>
-        <View style={[s.card, adultContentBlocked && s.cardActive]}>
-          <View style={s.cardLeft}>
-            <View style={[s.iconBox, adultContentBlocked && s.iconBoxActive]}>
-              <GlobeIcon color={adultContentBlocked ? Colors.gold : Colors.white3}/>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.cardTitle}>Block Adult Web Content</Text>
-              <Text style={s.cardSub}>
-                {adultContentBlocked
-                  ? 'Adult sites blocked via Screen Time'
-                  : 'Enable to restrict all adult websites in Safari'}
-              </Text>
-            </View>
-          </View>
-          {loading
-            ? <ActivityIndicator color={Colors.gold} size="small"/>
-            : <Toggle on={adultContentBlocked} onToggle={() => toggleAdultBlock(!adultContentBlocked)}/>
-          }
-        </View>
-        {adultContentBlocked && (
-          <View style={s.activeRow}>
-            <CheckCircle color={Colors.success}/>
-            <Text style={s.activeText}>Active — blocking all web content in Safari</Text>
-          </View>
-        )}
-
-        {/* App shield section */}
-        <View style={[s.sectionLabel, { marginTop: 24 }]}>
-          <PhoneIcon color={Colors.white3}/>
-          <Text style={s.sectionLabelText}>APP SHIELD</Text>
-        </View>
-
-        <View style={[s.card, appShieldEnabled && s.cardActive]}>
-          <View style={s.cardLeft}>
-            <View style={[s.iconBox, appShieldEnabled && s.iconBoxActive]}>
-              <ShieldIcon size={16} color={appShieldEnabled ? Colors.gold : Colors.white3}/>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={s.cardTitle}>Shielded Apps</Text>
-              <Text style={s.cardSub}>
-                {appShieldEnabled && shieldedAppCount > 0
-                  ? `${shieldedAppCount} app${shieldedAppCount !== 1 ? 's' : ''} shielded`
-                  : 'No apps selected — tap Manage to choose'}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity onPress={openAppPicker} style={s.manageBtn} activeOpacity={0.75}>
-            <Text style={s.manageBtnText}>MANAGE</Text>
-          </TouchableOpacity>
-        </View>
-
-        {appShieldEnabled && (
-          <View style={s.activeRow}>
-            <CheckCircle color={Colors.success}/>
-            <Text style={s.activeText}>
-              {shieldedAppCount} app{shieldedAppCount !== 1 ? 's' : ''} will show a Screen Time intervention screen
-            </Text>
-          </View>
-        )}
-
-        {appShieldEnabled && (
-          <TouchableOpacity onPress={clearShield} style={s.clearBtn} activeOpacity={0.75}>
-            <Text style={s.clearBtnText}>REMOVE APP SHIELD</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* How it works */}
-        <View style={[s.sectionLabel, { marginTop: 28 }]}>
-          <LockIcon color={Colors.white3}/>
-          <Text style={s.sectionLabelText}>HOW IT WORKS</Text>
-        </View>
-        <View style={s.infoCard}>
-          {[
-            ['🔐', 'OS-Level Enforcement', 'Restrictions live inside iOS itself — not inside this app. They remain active even if LustLock is closed.'],
-            ['🌐', 'Web Content Filter', 'When enabled, Safari will block all web browsing. Works in conjunction with your DNS shield for maximum coverage.'],
-            ['🛡', 'App Shield', 'Shielded apps show an intervention screen when opened, giving you a moment to choose differently.'],
-          ].map(([emoji, title, body]) => (
-            <View key={title} style={s.infoRow}>
-              <Text style={s.infoEmoji}>{emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={s.infoTitle}>{title}</Text>
-                <Text style={s.infoBody}>{body}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        ) : null}
       </ScrollView>
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.bg },
   header: {
-    flexDirection: 'row', alignItems: 'flex-end',
-    paddingHorizontal: 16, paddingBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 18, paddingBottom: 14,
+    borderBottomWidth: 1.5, borderBottomColor: Colors.border,
   },
-  eyebrow: {
-    fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 3,
-    color: Colors.gold, opacity: 0.7, marginBottom: 2,
+  eyebrow: { fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 2.5, color: Colors.gold },
+  title: { fontFamily: 'Cinzel_700Bold', fontSize: 26, color: Colors.black, marginTop: 3 },
+  badge: {
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 999,
+    backgroundColor: Colors.card, paddingHorizontal: 11, paddingVertical: 7,
   },
-  title: { fontFamily: 'Cinzel_700Bold', fontSize: 26, letterSpacing: 1, color: Colors.white },
-  statusBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    borderWidth: 1, borderRadius: 999,
-    paddingHorizontal: 12, paddingVertical: 6, marginBottom: 4,
+  badgeDot: { width: 7, height: 7, borderRadius: 4 },
+  badgeText: { fontFamily: 'Cinzel_600SemiBold', fontSize: 9, color: Colors.black, letterSpacing: 0.8, textTransform: 'uppercase' },
+  summary: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderWidth: 1.5, borderColor: Colors.goldBorder, borderRadius: 16,
+    backgroundColor: Colors.card, padding: 15,
   },
-  statusDot: { width: 7, height: 7, borderRadius: 3.5 },
-  statusText: { fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 1 },
-
-  sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-  sectionLabelText: {
-    fontFamily: 'Cinzel_600SemiBold', fontSize: 8, letterSpacing: 2, color: Colors.white3,
-  },
-
+  summaryText: { flex: 1, fontFamily: 'CrimsonPro_400Regular', fontSize: 15, lineHeight: 20, color: Colors.black },
   card: {
-    backgroundColor: Colors.surface, borderRadius: 18,
-    borderWidth: 1, borderColor: Colors.border,
-    padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginBottom: 8,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 16,
+    backgroundColor: Colors.card, padding: 15,
   },
-  cardActive: { borderColor: Colors.goldBorder, backgroundColor: 'rgba(45,27,68,0.95)' },
-  cardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center',
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  iconWrap: {
+    width: 38, height: 38, borderRadius: 19,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border,
   },
-  iconBoxActive: { backgroundColor: Colors.goldDim },
-  cardTitle: { fontFamily: 'Cinzel_600SemiBold', fontSize: 12, letterSpacing: 0.3, color: Colors.white },
-  cardSub: { fontFamily: 'CrimsonPro_400Regular', fontSize: 12, color: Colors.white3, marginTop: 2 },
-
-  activeRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginBottom: 4, paddingHorizontal: 4,
+  cardTitle: { fontFamily: 'Cinzel_700Bold', fontSize: 13, color: Colors.black },
+  cardBody: { fontFamily: 'CrimsonPro_400Regular', fontSize: 14, lineHeight: 18, color: Colors.black, marginTop: 3 },
+  action: {
+    alignSelf: 'flex-start', marginTop: 13,
+    borderWidth: 1.5, borderColor: Colors.goldBorder, borderRadius: 999,
+    paddingHorizontal: 14, paddingVertical: 8,
   },
-  activeText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 12, color: Colors.success, flex: 1 },
-
-  manageBtn: {
-    borderWidth: 1, borderColor: Colors.goldBorder, borderRadius: 999,
-    paddingHorizontal: 14, paddingVertical: 7,
-    backgroundColor: Colors.goldDim,
-  },
-  manageBtnText: { fontFamily: 'Cinzel_700Bold', fontSize: 8, letterSpacing: 1.5, color: Colors.gold },
-
-  clearBtn: {
-    borderWidth: 1, borderColor: 'rgba(192,57,43,0.35)', borderRadius: 999,
-    paddingVertical: 10, alignItems: 'center', marginTop: 6, marginBottom: 4,
-  },
-  clearBtnText: {
-    fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 2, color: Colors.crimson,
-  },
-
-  deniedCard: {
-    backgroundColor: 'rgba(192,57,43,0.10)', borderWidth: 1,
-    borderColor: 'rgba(192,57,43,0.30)', borderRadius: 16, padding: 16, marginBottom: 20,
-  },
-  deniedTitle: { fontFamily: 'Cinzel_700Bold', fontSize: 13, color: Colors.crimson, marginBottom: 6 },
-  deniedBody: { fontFamily: 'CrimsonPro_400Regular', fontSize: 13, color: Colors.white2, lineHeight: 20 },
-
-  infoCard: {
-    backgroundColor: Colors.surface, borderRadius: 18,
-    borderWidth: 1, borderColor: Colors.border, padding: 16, gap: 16,
-  },
-  infoRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  infoEmoji: { fontSize: 18, marginTop: 1 },
-  infoTitle: { fontFamily: 'Cinzel_600SemiBold', fontSize: 11, letterSpacing: 0.3, color: Colors.white, marginBottom: 3 },
-  infoBody: { fontFamily: 'CrimsonPro_400Regular', fontSize: 13, color: Colors.white3, lineHeight: 19 },
+  actionText: { fontFamily: 'Cinzel_700Bold', fontSize: 9, letterSpacing: 1.2, color: Colors.gold },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 4 },
+  loadingText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 13, color: Colors.black },
 });

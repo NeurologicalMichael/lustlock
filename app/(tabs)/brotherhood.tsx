@@ -364,7 +364,7 @@ export default function BrotherhoodScreen() {
         </ScrollView>
       )}
 
-      <View style={[s.fabWrap, { bottom: insets.bottom + 90 }]}>
+      <View style={[s.fabWrap, { bottom: insets.bottom + 14 }]}>
         <TouchableOpacity activeOpacity={0.85} onPress={() => setComposing(true)} style={s.fab}>
           <PlusIcon/>
         </TouchableOpacity>
@@ -388,7 +388,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 14,
     borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.bg,
   },
-  eyebrow: { fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 3, color: Colors.gold, opacity: 0.7, marginBottom: 2 },
+  eyebrow: { fontFamily: 'Cinzel_600SemiBold', fontSize: 9, letterSpacing: 3, color: Colors.gold, marginBottom: 2 },
   title: { fontFamily: 'Cinzel_700Bold', fontSize: 26, letterSpacing: 1, color: Colors.white },
   sortRow: { flexDirection: 'row', gap: 6, paddingBottom: 2 },
   sortPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border },
@@ -398,6 +398,6 @@ const s = StyleSheet.create({
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 14, color: Colors.white3 },
-  fabWrap: { position: 'absolute', right: 20 },
-  fab: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.gold, shadowOffset:{width:0,height:4}, shadowOpacity:0.45, shadowRadius:14, elevation:8 },
+  fabWrap: { position: 'absolute', right: 18 },
+  fab: { width: 68, height: 68, borderRadius: 34, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.gold, shadowOffset:{width:0,height:4}, shadowOpacity:0.45, shadowRadius:14, elevation:8 },
 });

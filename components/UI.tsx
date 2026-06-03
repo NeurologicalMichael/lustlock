@@ -7,7 +7,7 @@ import Svg, { Circle, Path, Line, Rect, Ellipse } from 'react-native-svg';
 import { Colors } from '../constants/colors';
 
 // ── GoldBtn ───────────────────────────────────────────────────────────────────
-// Gold-to-orange gradient matching calendar success circles
+// Refined warm-accent button
 interface GoldBtnProps {
   children: string;
   onPress?: () => void;
@@ -37,16 +37,18 @@ export function GoldBtn({ children, onPress, outline = false, sm = false, disabl
   return (
     <TouchableOpacity activeOpacity={0.75} onPress={onPress} disabled={disabled} style={{ opacity: disabled ? 0.5 : 1 }}>
       <LinearGradient
-        colors={['#FFD700', '#FFA500', '#FF8C00']}
+        colors={['#191715', '#0A0A0A']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.btnBase, {
           height, borderRadius: 999,
-          shadowColor: '#FFD700',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.40,
-          shadowRadius: 14,
-          elevation: 8,
+          borderWidth: 1,
+          borderColor: 'rgba(184,111,58,0.32)',
+          shadowColor: '#000000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.16,
+          shadowRadius: 12,
+          elevation: 4,
         }]}
       >
         <Text style={[styles.btnTextPrimary, { fontSize }]}>{children}</Text>
@@ -135,14 +137,14 @@ export function Bar({ value, height = 6, color = Colors.gold }: BarProps) {
       borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.05)',
     }}>
       <LinearGradient
-        colors={isGold ? ['#FFD700', '#FFA500', '#FF8C00'] : [color, color]}
+        colors={isGold ? ['#C9874E', '#A45E31'] : [color, color]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={{
           height: '100%',
           width: `${pct * 100}%`,
           borderRadius: 99,
-          shadowColor: isGold ? '#FFD700' : color,
+          shadowColor: isGold ? '#B86F3A' : color,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.5,
           shadowRadius: 4,
@@ -164,7 +166,7 @@ export function Dot({ color = Colors.success, size = 8 }: { color?: string; size
 
 // ── Eyebrow ───────────────────────────────────────────────────────────────────
 export function Eyebrow({ children, color = Colors.lavender }: { children: string; color?: string }) {
-  return <Text style={[styles.eyebrow, { color, opacity: 0.7 }]}>{children}</Text>;
+  return <Text style={[styles.eyebrow, { color }]}>{children}</Text>;
 }
 
 // ── BFIcon ────────────────────────────────────────────────────────────────────
@@ -248,7 +250,7 @@ const styles = StyleSheet.create({
   },
   btnTextPrimary: {
     fontFamily: 'Cinzel_700Bold',
-    color: '#0A0520',
+    color: '#FFFFFF',
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
@@ -269,6 +271,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
@@ -280,8 +284,8 @@ const styles = StyleSheet.create({
   cardGlass: {
     backgroundColor: Colors.glassCard,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     shadowColor: '#7B4FBE',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,

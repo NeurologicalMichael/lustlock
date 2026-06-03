@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, LogBox } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -30,6 +30,13 @@ import { Colors } from '../constants/colors';
 import { ScreenTime } from '../modules/ScreenTime';
 import { supabase } from '../lib/supabase';
 import { initPurchases, checkSubscriptionStatus } from '../lib/purchases';
+import { syncDailyReminder } from '../lib/notifications';
+
+LogBox.ignoreLogs([
+  '[RevenueCat] 🍎‼️ Error fetching offerings',
+  'There is a problem with your configuration. None of the products registered in the RevenueCat dashboard could be fetched',
+  'https://rev.cat/why-are-offerings-empty',
+]);
 
 function LoadingScreen() {
   const pulse = useSharedValue(0.3);
@@ -49,7 +56,7 @@ function LoadingScreen() {
 }
 
 export default function RootLayout() {
-  const { onboardingComplete, syncScreenTimeState, setUserId, setIsPro } = useAppStore();
+  const { onboardingComplete, notifDaily, syncScreenTimeState, setUserId, setIsPro, setNotifPref } = useAppStore();
   const [fontsLoaded] = useFonts({
     Cinzel_400Regular,
     Cinzel_600SemiBold,
@@ -72,6 +79,16 @@ export default function RootLayout() {
 
   // Init RevenueCat once on first render
   useEffect(() => { initPurchases(); }, []);
+
+  useEffect(() => {
+    syncDailyReminder(notifDaily)
+      .then(scheduled => {
+        if (notifDaily && !scheduled) setNotifPref('notifDaily', false);
+      })
+      .catch(error => {
+        console.warn('[Notifications] Unable to sync daily reminder', error);
+      });
+  }, [notifDaily, setNotifPref]);
 
   // Restore Supabase session + subscription status
   useEffect(() => {
@@ -110,7 +127,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light"/>
+      <StatusBar style="dark"/>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Colors.bg }, animation: 'fade' }}>
         <Stack.Screen name="(tabs)"/>
         <Stack.Screen name="emergency" options={{ presentation: 'fullScreenModal' }}/>
@@ -118,6 +135,7 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding"/>
         <Stack.Screen name="paywall"/>
         <Stack.Screen name="shield"/>
+        <Stack.Screen name="blocked"/>
       </Stack>
     </SafeAreaProvider>
   );
@@ -126,7 +144,7 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 24,

@@ -369,7 +369,7 @@ const cellS = StyleSheet.create({
   },
   futureCircle: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.20)',
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.32,
@@ -380,13 +380,13 @@ const cellS = StyleSheet.create({
   },
   missedCircle: {
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   missedDayNum: {
     fontFamily: 'Cinzel_400Regular',
-    color: 'rgba(255,255,255,0.35)',
+    color: Colors.white3,
   },
 });
 
@@ -454,7 +454,7 @@ const s = StyleSheet.create({
     bottom: 56,
     left: CARD_PAD,
     right: CARD_PAD,
-    backgroundColor: 'rgba(45,27,68,0.95)',
+    backgroundColor: Colors.card,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -482,7 +482,7 @@ const s = StyleSheet.create({
     marginTop: 16,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: Colors.border,
   },
   statusText: {
     fontFamily: 'Cinzel_700Bold',
@@ -494,14 +494,14 @@ const s = StyleSheet.create({
   // Modal
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(10,4,24,0.70)',
+    backgroundColor: 'rgba(0,0,0,0.36)',
   },
   recapSheet: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#2D1B44',
+    backgroundColor: Colors.card,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 28,

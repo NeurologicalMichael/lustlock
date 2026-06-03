@@ -3,30 +3,58 @@ import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Line } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { Dot, Eyebrow } from '../../components/UI';
 import { Colors } from '../../constants/colors';
+import { supabase } from '../../lib/supabase';
+
+const DAILY_LIMIT = 5;
+const USAGE_KEY = 'prayer_chat_usage';
 
 const PROMPTS = [
-  'I need prayer right now',
-  'Give me a verse for strength',
-  'Help me stay on track today',
-  'I relapsed — what do I do?',
+  'I need prayer',
+  'Verse for strength',
+  'Stay on track today',
+  'I relapsed',
 ];
 
-const REPLIES: Record<string, string> = {
-  'I need prayer right now':
-    "Lord, in this moment of struggle, we ask for clarity and strength. Let this temptation pass without taking root. You are not alone in this — I'm praying with you right now.\n\n\"I can do all things through Christ who strengthens me.\" — Philippians 4:13",
-  'Give me a verse for strength':
-    "Here's one that carries real weight:\n\n\"No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear.\"\n— 1 Corinthians 10:13\n\nYou were made to outlast this moment.",
-  'Help me stay on track today':
-    "Let's make today simple. One decision at a time. When the urge comes — pause, breathe, open this app. You don't have to white-knuckle it alone. What's your biggest risk point today?",
-  'I relapsed — what do I do?':
-    "First — you came here. That matters more than you know. A relapse isn't the end, it's data. Log it honestly, reset if needed, and look at what led up to it. Shame is the enemy of progress. Let's talk through what happened.",
-};
-
 interface Message { from: 'ai' | 'user'; text: string; }
+interface ChatMessage { role: 'user' | 'assistant'; content: string; }
+interface UsageRecord { date: string; count: number; }
+
+async function getUsage(): Promise<UsageRecord> {
+  try {
+    const raw = await AsyncStorage.getItem(USAGE_KEY);
+    if (!raw) return { date: today(), count: 0 };
+    const record: UsageRecord = JSON.parse(raw);
+    if (record.date !== today()) return { date: today(), count: 0 };
+    return record;
+  } catch {
+    return { date: today(), count: 0 };
+  }
+}
+
+async function incrementUsage(current: UsageRecord): Promise<UsageRecord> {
+  const updated = { date: today(), count: current.count + 1 };
+  await AsyncStorage.setItem(USAGE_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+async function saveUsage(record: UsageRecord): Promise<UsageRecord> {
+  await AsyncStorage.setItem(USAGE_KEY, JSON.stringify(record));
+  return record;
+}
+
+function today(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function localPrayerFallback(): string {
+  return "I'm having trouble connecting to the prayer partner right now, but you're not alone. Take one slow breath, step away from the trigger, and pray this simply: Lord Jesus, give me strength for the next right choice. I will stay here with you while you reset.";
+}
 
 function AiAvatar() {
   return (
@@ -51,20 +79,71 @@ export default function PrayerScreen() {
   const [msgs, setMsgs] = useState<Message[]>([
     { from: 'ai', text: "Peace to you. I'm here whenever you need to talk, pray, or just process what's on your mind. What's going on today?" },
   ]);
+  const [history, setHistory] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
+  const [usage, setUsage] = useState<UsageRecord>({ date: today(), count: 0 });
   const scrollRef = useRef<ScrollView>(null);
 
-  const send = (text: string) => {
-    if (!text.trim() || loading) return;
+  useEffect(() => {
+    getUsage().then(setUsage);
+  }, []);
+
+  const remaining = Math.max(0, DAILY_LIMIT - usage.count);
+  const limitReached = remaining === 0;
+
+  const send = async (text: string) => {
+    if (!text.trim() || loading || limitReached) return;
+
+    const currentUsage = await getUsage();
+    if (currentUsage.count >= DAILY_LIMIT) {
+      setUsage(currentUsage);
+      setMsgs(m => [...m, { from: 'ai', text: "You've used all 5 prayers for today. Rest in His peace — come back tomorrow and I'll be here." }]);
+      return;
+    }
+
+    const userMsg: ChatMessage = { role: 'user', content: text };
+    const nextHistory = [...history, userMsg];
     setMsgs(m => [...m, { from: 'user', text }]);
+    setHistory(nextHistory);
     setDraft('');
     setLoading(true);
-    setTimeout(() => {
-      const reply = REPLIES[text] ?? "I hear you. Tell me more about what's going on — the more specific you are, the better I can help.";
+
+    try {
+      const { data, error } = await supabase.functions.invoke('prayer-chat', {
+        body: { messages: nextHistory.slice(-12) },
+      });
+
+      if (data?.error === 'daily_limit_reached') {
+        const updated = await saveUsage({ date: today(), count: DAILY_LIMIT });
+        setUsage(updated);
+        setMsgs(m => [...m, { from: 'ai', text: "You've used all 5 prayers for today. Rest in His peace — come back tomorrow and I'll be here." }]);
+        return;
+      }
+
+      if (error || data?.error || !data?.reply) {
+        console.warn('[Prayer] prayer-chat failed', error ?? data?.error);
+        const fallback = localPrayerFallback();
+        setMsgs(m => [...m, { from: 'ai', text: fallback }]);
+        setHistory(h => [...h, { role: 'assistant', content: fallback }]);
+        return;
+      }
+
+      const reply: string = data.reply;
       setMsgs(m => [...m, { from: 'ai', text: reply }]);
+      setHistory(h => [...h, { role: 'assistant', content: reply }]);
+
+      const updated = typeof data.remaining === 'number'
+        ? await saveUsage({ date: today(), count: DAILY_LIMIT - data.remaining })
+        : await incrementUsage(currentUsage);
+      setUsage(updated);
+    } catch {
+      const fallback = localPrayerFallback();
+      setMsgs(m => [...m, { from: 'ai', text: fallback }]);
+      setHistory(h => [...h, { role: 'assistant', content: fallback }]);
+    } finally {
       setLoading(false);
-    }, 1100);
+    }
   };
 
   useEffect(() => {
@@ -122,39 +201,49 @@ export default function PrayerScreen() {
         )}
       </ScrollView>
 
-      {/* Quick prompts */}
-      {msgs.length <= 2 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.promptRow}
-        >
-          {PROMPTS.map(p => (
-            <TouchableOpacity key={p} activeOpacity={0.75} onPress={() => send(p)} style={styles.promptChip}>
-              <Text style={styles.promptText}>{p}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
-
       {/* Input */}
-      <View style={[styles.inputRow, { paddingBottom: insets.bottom + 10 }]}>
-        <TextInput
-          value={draft}
-          onChangeText={setDraft}
-          onSubmitEditing={() => send(draft)}
-          placeholder="Talk, pray, ask anything…"
-          placeholderTextColor={Colors.white3}
-          style={styles.input}
-          multiline
-        />
-        <TouchableOpacity
-          activeOpacity={0.75}
-          onPress={() => send(draft)}
-          style={[styles.sendBtn, { backgroundColor: draft.trim() ? Colors.gold : Colors.surfaceAlt }]}
-        >
-          <SendIcon active={!!draft.trim()}/>
-        </TouchableOpacity>
+      <View style={[styles.inputRow, { paddingBottom: 8 }]}>
+        {msgs.length <= 2 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.promptScroller}
+            contentContainerStyle={styles.promptRow}
+          >
+            {PROMPTS.map(p => (
+              <TouchableOpacity key={p} activeOpacity={0.75} onPress={() => send(p)} style={styles.promptChip}>
+                <Text style={styles.promptText}>{p}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+        {remaining <= 2 && (
+          <Text style={styles.limitText}>
+            {limitReached
+              ? 'Daily limit reached · Come back tomorrow'
+              : `${remaining} prayer${remaining === 1 ? '' : 's'} left today`}
+          </Text>
+        )}
+        <View style={styles.inputInner}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            onSubmitEditing={() => send(draft)}
+            placeholder={limitReached ? 'Come back tomorrow…' : 'Talk, pray, ask anything…'}
+            placeholderTextColor={Colors.white3}
+            style={[styles.input, limitReached && styles.inputDisabled]}
+            multiline
+            editable={!limitReached}
+          />
+          <TouchableOpacity
+            activeOpacity={0.75}
+            onPress={() => send(draft)}
+            disabled={limitReached}
+            style={[styles.sendBtn, { backgroundColor: draft.trim() && !limitReached ? Colors.gold : Colors.surfaceAlt }]}
+          >
+            <SendIcon active={!!draft.trim() && !limitReached}/>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -194,22 +283,35 @@ const styles = StyleSheet.create({
   },
   userText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 14, color: Colors.white, lineHeight: 22 },
   typingDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.white3 },
-  promptRow: { paddingHorizontal: 14, paddingBottom: 8, gap: 8 },
+  promptScroller: { flexGrow: 0, maxHeight: 42 },
+  promptRow: { paddingHorizontal: 2, paddingBottom: 0, gap: 8, alignItems: 'center' },
   promptChip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+    alignSelf: 'flex-start',
+    flexGrow: 0,
+    flexShrink: 0,
+    maxWidth: 170,
+    minHeight: 32,
+    paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999,
     backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
   },
-  promptText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 13, color: Colors.white3 },
+  promptText: { fontFamily: 'CrimsonPro_400Regular', fontSize: 11, lineHeight: 15, color: Colors.white3, textAlign: 'center' },
   inputRow: {
-    flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10,
+    paddingHorizontal: 14, paddingTop: 8, gap: 6,
     borderTopWidth: 1, borderTopColor: Colors.border,
   },
+  limitText: {
+    fontFamily: 'CrimsonPro_400Regular', fontSize: 11,
+    color: Colors.gold, textAlign: 'center',
+  },
+  inputInner: { flexDirection: 'row', gap: 8 },
   input: {
     flex: 1, backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border,
     borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11,
     color: Colors.white, fontFamily: 'CrimsonPro_400Regular', fontSize: 13,
     maxHeight: 100,
   },
+  inputDisabled: { opacity: 0.4 },
   sendBtn: {
     width: 42, height: 42, borderRadius: 21,
     alignItems: 'center', justifyContent: 'center', flexShrink: 0,

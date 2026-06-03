@@ -3,17 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Svg, { Path, Rect, Line, Circle } from 'react-native-svg';
 import { Colors } from '../constants/colors';
 
-const TABS = [
-  { name: 'index',       label: 'Home'    },
-  { name: 'battle-log',  label: 'Log'     },
-  { name: 'prayer',      label: 'Prayer'  },
-  { name: 'blocker',     label: 'Shield'  },
-  { name: 'brotherhood', label: 'Brothers'},
-  { name: 'profile',     label: 'Profile' },
-];
-
 function HomeIcon({ active }: { active: boolean }) {
-  const c = active ? Colors.gold : Colors.white3;
+  const c = active ? Colors.gold : Colors.black;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Path d="M3 21h18M5 21V10l7-7 7 7v11" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/>
@@ -22,7 +13,7 @@ function HomeIcon({ active }: { active: boolean }) {
   );
 }
 function LogIcon({ active }: { active: boolean }) {
-  const c = active ? Colors.gold : Colors.white3;
+  const c = active ? Colors.gold : Colors.black;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Rect x="4" y="3" width="16" height="18" rx="2" stroke={c} strokeWidth="1.6"/>
@@ -33,7 +24,7 @@ function LogIcon({ active }: { active: boolean }) {
   );
 }
 function PrayerIcon({ active }: { active: boolean }) {
-  const c = active ? Colors.gold : Colors.white3;
+  const c = active ? Colors.gold : Colors.black;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Path d="M12 3c-4 0-7 3-7 7 0 2.5 1.2 4.7 3 6v3h8v-3c1.8-1.3 3-3.5 3-6 0-4-3-7-7-7z" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/>
@@ -43,7 +34,7 @@ function PrayerIcon({ active }: { active: boolean }) {
   );
 }
 function BlockerIcon({ active }: { active: boolean }) {
-  const c = active ? Colors.gold : Colors.white3;
+  const c = active ? Colors.gold : Colors.black;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Path d="M12 2L4 5v6c0 5.5 3.75 10.15 8 11.4C16.25 21.15 20 16.5 20 11V5L12 2z"
@@ -53,7 +44,7 @@ function BlockerIcon({ active }: { active: boolean }) {
   );
 }
 function BrothersIcon({ active }: { active: boolean }) {
-  const c = active ? Colors.gold : Colors.white3;
+  const c = active ? Colors.gold : Colors.black;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Circle cx="8" cy="7" r="3" stroke={c} strokeWidth="1.6"/>
@@ -64,7 +55,7 @@ function BrothersIcon({ active }: { active: boolean }) {
   );
 }
 function ProfileIcon({ active }: { active: boolean }) {
-  const c = active ? Colors.gold : Colors.white3;
+  const c = active ? Colors.gold : Colors.black;
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="8" r="4" stroke={c} strokeWidth="1.6"/>
@@ -73,17 +64,24 @@ function ProfileIcon({ active }: { active: boolean }) {
   );
 }
 
-const ICONS = [HomeIcon, LogIcon, PrayerIcon, BlockerIcon, BrothersIcon, ProfileIcon];
+const TAB_CONFIG = {
+  index:         { label: 'Home',     Icon: HomeIcon },
+  'battle-log':  { label: 'Log',      Icon: LogIcon },
+  prayer:        { label: 'Prayer',   Icon: PrayerIcon },
+  brotherhood:   { label: 'Brothers', Icon: BrothersIcon },
+  blocker:       { label: 'Shield',   Icon: BlockerIcon },
+  profile:       { label: 'Profile',  Icon: ProfileIcon },
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TabBar({ state, navigation }: any) {
   return (
     <View style={styles.container}>
       {state.routes.map((route: { key: string; name: string }, index: number) => {
-        const tab = TABS[index];
+        const tab = TAB_CONFIG[route.name as keyof typeof TAB_CONFIG];
         if (!tab) return null;
         const isFocused = state.index === index;
-        const Icon = ICONS[index];
+        const Icon = tab.Icon;
 
         const onPress = () => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -92,10 +90,12 @@ export function TabBar({ state, navigation }: any) {
 
         return (
           <TouchableOpacity key={route.key} activeOpacity={0.75} onPress={onPress} style={styles.tab}>
-            <Icon active={isFocused}/>
-            <Text style={[styles.label, { color: isFocused ? Colors.gold : Colors.white3 }]}>
-              {tab.label}
-            </Text>
+            <View style={[styles.tabInner, isFocused && styles.tabInnerActive]}>
+              <Icon active={isFocused}/>
+              <Text style={[styles.label, { color: isFocused ? Colors.gold : Colors.black }]}>
+                {tab.label}
+              </Text>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -106,23 +106,41 @@ export function TabBar({ state, navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#0A0A0A',
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingBottom: 20,
-    paddingTop: 8,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 2,
+    borderTopColor: 'rgba(10,10,10,0.16)',
+    paddingBottom: 18,
+    paddingTop: 10,
+    paddingHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 18,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    gap: 5,
+  },
+  tabInner: {
+    width: 52,
+    minHeight: 50,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  tabInnerActive: {
+    backgroundColor: 'rgba(232,118,44,0.08)',
+    borderColor: 'rgba(232,118,44,0.22)',
   },
   label: {
     fontFamily: 'Cinzel_600SemiBold',
-    fontSize: 8,
-    letterSpacing: 1,
+    fontSize: 7.5,
+    letterSpacing: 0.7,
     textTransform: 'uppercase',
   },
 });

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, Modal, Alert, Linking,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -67,7 +67,8 @@ function generateParticles(count: number) {
 
 export default function EmergencyScreen() {
   const insets = useSafeAreaInsets();
-  const { globalStreakDays, incrementEmergency } = useAppStore();
+  const { globalStreakDays, incrementEmergency, accountabilityPartners } = useAppStore();
+  const accountabilityPartner = accountabilityPartners[0];
   const shieldState = getTierFromDays(globalStreakDays);
   const [scripture] = useState<Scripture>(() => getRandomScripture());
   const [victory, setVictory] = useState(false);
@@ -89,6 +90,35 @@ export default function EmergencyScreen() {
       withTiming(0, { duration: 300 })
     );
     victoryScale.value = withSpring(1, { damping: 8, stiffness: 150 });
+  };
+
+  const contactAccountabilityPartner = async () => {
+    if (!accountabilityPartner) {
+      Alert.alert(
+        'No accountability partner saved',
+        'Add a trusted partner in Profile settings so you can reach them quickly when you need support.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Open Profile',
+            onPress: () => {
+              setHelpModal(false);
+              router.push('/(tabs)/profile');
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    const subject = encodeURIComponent('Could use your support');
+    const body = encodeURIComponent(`Hi ${accountabilityPartner.name}, I could use some support right now. Please check in with me when you can.`);
+
+    try {
+      await Linking.openURL(`mailto:${accountabilityPartner.partnerUserId}?subject=${subject}&body=${body}`);
+    } catch {
+      Alert.alert('Unable to open email', 'Please open your email app and contact your accountability partner directly.');
+    }
   };
 
   if (victory) {
@@ -139,9 +169,11 @@ export default function EmergencyScreen() {
           <View style={styles.helpCard}>
             <Text style={styles.helpLabel}>ACCOUNTABILITY PARTNER</Text>
             <Text style={styles.helpBody}>
-              Send your accountability partner a message. Let them know you need support right now.
+              {accountabilityPartner
+                ? `Email ${accountabilityPartner.name} and let them know you need support right now.`
+                : 'Add a trusted accountability partner in Profile settings so you can reach out quickly.'}
             </Text>
-            <TouchableOpacity activeOpacity={0.75} style={styles.helpBtn}>
+            <TouchableOpacity activeOpacity={0.75} style={styles.helpBtn} onPress={contactAccountabilityPartner}>
               <Text style={styles.helpBtnText}>SEND MESSAGE</Text>
             </TouchableOpacity>
           </View>

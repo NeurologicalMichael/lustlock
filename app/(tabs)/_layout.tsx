@@ -8,8 +8,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="index"/>
       <Tabs.Screen name="battle-log"/>
       <Tabs.Screen name="prayer"/>
-      <Tabs.Screen name="blocker"/>
       <Tabs.Screen name="brotherhood"/>
+      <Tabs.Screen name="blocker"/>
       <Tabs.Screen name="profile"/>
     </Tabs>
   );

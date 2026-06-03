@@ -29,6 +29,18 @@ export async function signOut() {
   return supabase.auth.signOut();
 }
 
+export async function deleteCurrentAccount() {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) return { deleted: false, reason: 'no-session' as const };
+
+  const { error } = await supabase.functions.invoke('delete-account');
+  if (error) throw error;
+
+  await supabase.auth.signOut();
+  return { deleted: true as const };
+}
+
 export async function getSession() {
   const { data: { session } } = await supabase.auth.getSession();
   return session;
